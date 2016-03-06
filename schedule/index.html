@@ -21,7 +21,6 @@
     <!-- Custom styles for this template -->
     <style type="text/css">     
       body {
-        min-height: 2000px; /* change this */
         padding-top: 70px;
       }
     </style>
@@ -49,24 +48,9 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            <li><a href="#">Home</a></li>
-            <li class="dropdown">
-              <a href="#" 
-                class="dropdown-toggle dropdown-day" 
-                data-toggle="dropdown" 
-                role="button" 
-                aria-haspopup="true" 
-                aria-expanded="false">Day 0 - March 17 <span class="caret"></span>
-              </a>
-              <ul class="dropdown-menu">
-                <li><a href="#/2016-03-17">Day 0 - March 17</a></li>
-                <li><a href="#/2016-03-18">Day 1 - March 18</a></li>
-                <li><a href="#/2016-03-19">Day 2 - March 19</a></li>
-                <li><a href="#/2016-03-20">Day 3 - March 20</a></li>
-                <!-- <li role="separator" class="divider"></li> -->
-                <!-- <li class="dropdown-header">Nav header</li> -->
-              </ul>
-            </li>
+            <li id="nav-2016-03-18"><a href="#/2016-03-18">Fri., March 18</a></li>
+            <li id="nav-2016-03-19"><a href="#/2016-03-19">Sat., March 19</a></li>
+            <li id="nav-2016-03-20"><a href="#/2016-03-20">Sun., March 20</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -76,26 +60,45 @@
     </div> <!-- /container -->
 
     <div class="shadow" style="display: none">
-      <div id="session-list-tpl">
+
+      <div id="session-list-tpl" class="container">
         <div class="track-list">
         </div>
       </div>
 
-      <div id="session-list-per-track-tpl">
-        <h2 class="track-title">$track-title</h2>
-        <ul class="session-list">
-        </ul>
+      <div id="session-list-per-track-tpl" class="row">
+        <div class="col-md-12">
+          <h2 class="track-title">$track-title</h2>
+          <table class="table">
+            <thead>
+            <th style="width: 45%">Title</th>
+            <th style="width: 20%">Type</th>
+            <th style="width: 21%">Speaker</th>
+            <th style="width: 7%">Start</th>
+            <th style="width: 7%">End</th>
+            </thead>
+            <tbody class="session-list">
+              <tr class="session-tpl" data-session-id="XYZ">
+                <td class="session-title">$session-title</td>
+                <td class="session-location">$session-location</td>
+                <td class="session-speakers">$session-speakers</td>
+                <td class="session-start">$session-start</td>
+                <td class="session-end">$session-end</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <li id="session-tpl">
-        <span class="session-title">$session-title</span>
-      </li>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="./main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.2/moment.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" 
       integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" 
       crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      var version = 1456940341
+      document.write('<script src="./main.js?v=' + version + '"><\/script>')
+    </script>
   </body>
 </html>

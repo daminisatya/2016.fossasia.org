@@ -1,17 +1,26 @@
 (function() {
-  var dataUrl = 'https://raw.githubusercontent.com/fossasia/open-event/master/testapi/event/1/sessions'
+  var dataUrl = './sessions.json'
+
+  function clone(node) {
+    var elem = node.cloneNode(true)
+    elem.id = 'node-' + Math.round(Math.random() * 10000).toString()
+    return elem
+  }
+
+  function clear(node) {
+    while(node.firstChild)
+      node.removeChild(node.firstChild)
+  }
 
   function NavbarCtrl(sessionStore) {
     var elem = document.getElementById('navbar')
-    var dropdownDay = elem.querySelector('.dropdown-day')
-
     sessionStore.on('change', function() {
-      var currentDate = sessionStore.currentDate()
-      var year = currentDate.getFullYear(),
-          month = currentDate.getMonth() + 1,
-          day = currentDate.getDate();
-
-      dropdownDay.textContent = year + '/' + month + '/' + day
+      var strDay = moment(sessionStore.currentDate()).format('YYYY-MM-DD')
+      var list = elem.querySelectorAll('#navbar .nav li')
+      for (var i = 0; i < list.length; i++) {
+        list.item(i).className = ''
+      }
+      document.getElementById('nav-' + strDay).className = 'active'
     })
   }
 
@@ -31,7 +40,7 @@
     })
 
     this.render = function() {
-      elem = tpl.cloneNode(true)
+      elem = clone(tpl)
       return elem
     }
 
@@ -64,7 +73,7 @@
     var elem = null
 
     this.render = function() {
-      elem = tpl.cloneNode(true)
+      elem = clone(tpl)
       doRender()
       return elem
     }
@@ -76,6 +85,8 @@
 
     function renderChildren() {
       var sessionListNode = elem.querySelector('.session-list')
+      clear(sessionListNode)
+
       for(var i = 0; i < params.sessions.length; i++) {
         sessionListNode.appendChild(
           new SessionCtrl(params.sessions[i]).render()
@@ -88,12 +99,23 @@
    * [SessionCtrl description]
    */
   function SessionCtrl(params) {
-    var tpl = document.getElementById('session-tpl')
+    var tpl = document.querySelector('.session-tpl')
     var elem = null
 
     this.render = function() {
-      elem = tpl.cloneNode(true)
+
+      var speakers = []
+      params.speakers.forEach(function(speaker) {
+        speakers.push(speaker.name)
+      })
+      
+      elem = clone(tpl)
+      elem.setAttribute('data-session-id', params.session_id)
       elem.querySelector('.session-title').textContent = params.title
+      elem.querySelector('.session-location').textContent = params.location
+      elem.querySelector('.session-speakers').textContent = speakers.join(', ')
+      elem.querySelector('.session-start').textContent = params.start_time.format('h:mm a')
+      elem.querySelector('.session-end').textContent = params.end_time.format('h:mm a')
       return elem
     }
   }
@@ -106,29 +128,7 @@
     var listeners = []
     var currentDate = new Date(2016, 2, 18)
 
-    var dummyData = [
-      {
-        track: 'OpenTech', 
-        date: '2016-03-18', 
-        speakers: ['Hong Phuc'], 
-        start: '10:00 AM', 
-        title: 'Grand Opening'
-      },
-      {
-        track: 'OpenTech', 
-        date: '2016-03-19', 
-        speakers: ['Stephanie Taylor'], 
-        start: '09:30 AM', 
-        title: 'Google Summer of Code and Google Code-In'
-      },
-      {
-        track: 'Web Tech', 
-        date: '2016-03-19', 
-        speakers: ['Dan Tran'], 
-        start: '11:00 AM', 
-        title: 'Chat Bots'
-      },
-    ]
+    var sessionData = {}
 
     function notify(event, payload) {
       var handlers = listeners[event] || []
@@ -158,35 +158,12 @@
     }
 
     function getTrackList() {
-      var year = currentDate.getFullYear(),
-          month = currentDate.getMonth() + 1,
-          day = currentDate.getDate();
-
-      var currentDay = year.toString() + '-' + zeroFill(month) + '-' + zeroFill(day) 
-
-      var filtered = []
+      var strDay = moment(currentDate).format('YYYY-MM-DD')
+      var obj = sessionData[strDay] || []
       var result = []
-      var tracks = {}
-      var session, keys
-
-      for(var i = 0; i < dummyData.length; i++) {
-        if (dummyData[i].date === currentDay) 
-          filtered.push(dummyData[i])
-      }
-
-      for(var j = 0; j < filtered.length; j++) {
-        session = filtered[j]
-        if (!tracks[session.track]) {
-          tracks[session.track] = {title: session.track, sessions: []}
-        }
-        tracks[session.track].sessions.push(session)
-      }
-
-      keys = Object.keys(tracks)
-      for (var k = 0; k < keys.length; k++) {
-        result.push(tracks[keys[k]])
-      }
-
+      Object.keys(obj).forEach(function(key) {
+        result.push(obj[key])
+      })
       return result
     }
 
@@ -199,7 +176,32 @@
       listeners[event].push(cb)
     }
 
+    function parseData(_data) {
+      var m, strDay, trackName
+
+      // data[yyyy-mm-dd][track][session]
+      _data.sessions.forEach(function(session) {
+        session.start_time = session.start_time ? moment(session.start_time) : undefined
+        session.end_time = session.end_time ? moment(session.end_time) : undefined
+
+        if (!session.start_time)
+          return
+
+        var strDay = session.start_time.format('YYYY-MM-DD')
+        var trackName = session.track.name
+
+        if (!sessionData[strDay]) 
+          sessionData[strDay] = {}
+
+        if (!sessionData[strDay][trackName]) 
+          sessionData[strDay][trackName] = {title: trackName, sessions: []}
+
+        sessionData[strDay][trackName].sessions.push(session)
+      })
+    }
+
     function onDataComplete(data) {
+      parseData(data)
       notify('data', data)
     }
 
@@ -216,33 +218,21 @@
     }
   }
 
+  function actionSelectDay() {
+    var hash = window.location.hash.replace(/^#\//, '') || '2016-03-18'
+    var date = moment(hash).toDate()
+    store.selectDay(date)
+  }
+
+  // store and controllers
   var store = SessionStore({url: dataUrl})
   var sessionList = new SessionListCtrl(store)
   var navbarCtrl = new NavbarCtrl(store)
 
-  function parseDate(hash) {
-    if (!hash.match(/\d{4}-\d{2}-\d{2}/)) {
-      throw Error('Invalid date: ' + hash)
-      return
-    }
-
-    var parts = hash.split('-')
-    var year = parseInt(parts[0]),
-        month = parseInt(parts[1] - 1),
-        day = parseInt(parts[2])
-
-    return new Date(year, month, day)
-  }
-
-  function actionSelectDay() {
-    var hash = window.location.hash
-    var date = parseDate(hash.replace(/^#\//, ''))
-    store.selectDay(date)
-  }
-
   document.getElementById('container').appendChild(sessionList.render())
 
   window.onhashchange = actionSelectDay
-  actionSelectDay()
+  store.on('data', actionSelectDay)
 
+  store.fetch()
 })()
